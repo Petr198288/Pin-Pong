@@ -9,7 +9,7 @@ from time import time as timer
 #нам нужны такие картинки:
 img_back = "плоская-таблица-pong-pin-взгляд-сверху-поля-пингпонга-с-линией-вектором-118501901.webp" #фон игры
 img_hero = "racket.png" #герой
-img_enemy = "png-transparent-tennis-balls-yellow-sporting-goods-tennis-ball-icon-miscellaneous-sport-sports-equipment-thumbnail.png" #враг
+img_enemy = "tenis_ball.png" #враг
 
 
 #класс-родитель для других спрайтов
@@ -38,32 +38,36 @@ gun_clip = 5
 class Player(GameSprite):
     def update_l(self):
         keys = key.get_pressed()
-        if keys[K_w] and self.rect.x > 5:
-            self.rect.x -= self.speed
-        if keys[K_s] and self.rect.x > -800:
-            self.rect.x += self.speed
+        if keys[K_w] and self.rect.y > 0:
+            self.rect.y -= self.speed
+        if keys[K_s] and self.rect.y < 400:
+            self.rect.y += self.speed
     def update_r(self):
         keys = key.get_pressed()
-        if keys[K_UP] and self.rect.x > 5:
-            self.rect.x -= self.speed
-        if keys[K_DOWN] and self.rect.x > -800:
-            self.rect.x += self.speed
-        
-
-       
+        if keys[K_UP] and self.rect.y > 0:
+            self.rect.y -= self.speed
+        if keys[K_DOWN] and self.rect.y < 400:
+            self.rect.y += self.speed
 
 
-#класс спрайта-врага  
+#класс спрайта-врага
 class Enemy(GameSprite):
+    def __init__(self, player_image, player_x, player_y, size_x, size_y, player_speed):
+        super().__init__(player_image, player_x, player_y, size_x, size_y, player_speed)
+        self.speed_x = self.speed
+        self.speed_y = self.speed
     #движение врага
     def update(self):
-        self.rect.y += self.speed
-        global lost
-        #исчезает, если дойдёт до края экрана
-        if self.rect.y > win_height:
-            self.rect.x = randint(80, win_width - 80)
-            self.rect.y = 0
-            lost = lost + 1
+        self.rect.y += self.speed_y
+        self.rect.x += self.speed_x
+        if self.rect.y > 450:
+            self.speed_y *= -1
+
+        self.rect.y += self.speed_y
+        self.rect.x += self.speed_x
+        if self.rect.y < 50:
+            self.speed_y *= -1
+        
  
 
 
@@ -75,22 +79,49 @@ display.set_caption("Ping-Pong")
 window = display.set_mode((win_width, win_height))
 background = transform.scale(image.load(img_back), (win_width, win_height))
 #создаём спрайты
-ship = Player(img_hero, 5, win_height - 100, 80, 100, 10)
-
+rocket1 = Player(img_hero, 5, win_height - 495, 40, 120, 10)
+rocket2 = Player(img_hero, 650, win_height - 495, 40, 120, 10)
+ball = Enemy(img_enemy, 325, win_height - 275, 50, 50, 2)
 #переменная "игра закончилась": как только там True, в основном цикле перестают работать спрайты
 finish = False
 #основной цикл игры:
-run = True #флаг сбрасывается кнопкой закрытия окна
+game = True #флаг сбрасывается кнопкой закрытия окна
 clock = time.Clock()
 Reload = False
-while run:
+font.init()
+font1 = font.Font(None, 35)
+lose1 = font1.render('PLAYER 1 LOSE!', True, (180, 0, 0))
+lose2 = font1.render('PLAYER 2 LOSE!', True, (180, 0, 0))
+while game:
     
     #событие нажатия на кнопку Закрыть
     for e in event.get():
         if e.type == QUIT:
-            run = False
+            game = False
+
+    if sprite.collide_rect(rocket1, ball) or sprite.collide_rect(rocket2, ball):
+        ball.speed_x *= -1
         #событие нажатия на пробел - спрайт стреляет
 
+
+    
     window.blit(background, (0,0))
+    rocket1.reset()
+    rocket2.reset()
+    ball.reset()
+    rocket1.update_l()
+    rocket2.update_r()
+    ball.update()
+
+    if ball.rect.x < 0:
+        finish = True
+        window.blit(lose1, (200, 200)) 
+        game = False
+
+    if ball.rect.x > 700:
+        finish = True
+        window.blit(lose2, (200, 200)) 
+        game = False
+
     clock.tick(40)
     display.update()
